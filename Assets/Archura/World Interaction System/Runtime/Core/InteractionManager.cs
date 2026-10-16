@@ -7,11 +7,20 @@ namespace Archura.WIS.Core
     public sealed class InteractionManager : MonoBehaviour
     {
         private readonly Dictionary<InteractionChannel, HashSet<IInteractionResponder>> listeners = new();
-        private readonly HashSet<IInteractionResponder> responders = new();
-        private readonly List<IInteractionResponder> receiverBuffer = new();
-        private readonly List<IInteractionResponder> simulationBuffer = new();
-        private List<PendingInteraction> pending = new();
-        private List<PendingInteraction> dispatching = new();
+        
+        public static InteractionManager Instance;
+
+        private void Awake()
+        {
+            if (Instance != null)
+            {
+                Debug.LogError("Multiple InteractionManager have been detected.");
+                this.enabled = false;
+                return;
+            }
+
+            Instance = this;
+        }
 
         public void Register(InteractionChannel channel, IInteractionResponder responder)
         {
@@ -24,93 +33,38 @@ namespace Archura.WIS.Core
                 listeners.Add(channel, channelListeners);
             }
 
-            if (channelListeners.Add(responder)) responders.Add(responder);
+            channelListeners.Add(responder);
         }
 
         public void Unregister(InteractionChannel channel, IInteractionResponder responder)
         {
             if (channel == null || responder == null) return;
             if (!listeners.TryGetValue(channel, out var channelListeners)) return;
-            if (!channelListeners.Remove(responder)) return;
 
+            channelListeners.Remove(responder);
             if (channelListeners.Count == 0) listeners.Remove(channel);
-            foreach (var remainingListeners in listeners.Values)
-            {
-                if (remainingListeners.Contains(responder)) return;
-            }
-            responders.Remove(responder);
         }
 
         public void Publish(InteractionChannel channel, in InteractionSample sample)
         {
             if (channel == null) throw new ArgumentNullException(nameof(channel));
-            if (!isActiveAndEnabled) return;
-            pending.Add(new PendingInteraction(channel, sample));
-        }
+            if (!isActiveAndEnabled || !listeners.TryGetValue(channel, out var channelListeners)) return;
 
-        private void LateUpdate()
-        {
-            if (!isActiveAndEnabled) return;
-            (pending, dispatching) = (dispatching, pending);
+            var receivers = new IInteractionResponder[channelListeners.Count];
+            channelListeners.CopyTo(receivers);
 
-            for (int i = 0; i < dispatching.Count; i++)
+            foreach (var responder in receivers)
             {
-                var interaction = dispatching[i];
-                if (!listeners.TryGetValue(interaction.Channel, out var channelListeners)) continue;
+                if (!channelListeners.Contains(responder)) continue;
 
-                receiverBuffer.Clear();
-                receiverBuffer.AddRange(channelListeners);
-                var sample = interaction.Sample;
-
-                foreach (var responder in receiverBuffer)
-                {
-                    if (!isActiveAndEnabled) return;
-                    if (!channelListeners.Contains(responder)) continue;
-                    try
-                    {
-                        responder.Receive(in sample);
-                    }
-                    catch (Exception exception)
-                    {
-                        Debug.LogException(exception, responder as UnityEngine.Object);
-                    }
-                }
-            }
-
-            dispatching.Clear();
-            simulationBuffer.Clear();
-            simulationBuffer.AddRange(responders);
-
-            foreach (var responder in simulationBuffer)
-            {
-                if (!isActiveAndEnabled) return;
-                if (!responders.Contains(responder)) continue;
                 try
                 {
-                    responder.Simulate(Time.deltaTime);
+                    responder.Receive(in sample);
                 }
                 catch (Exception exception)
                 {
                     Debug.LogException(exception, responder as UnityEngine.Object);
                 }
-            }
-        }
-
-        private void OnDisable()
-        {
-            pending.Clear();
-            dispatching.Clear();
-        }
-
-        private readonly struct PendingInteraction
-        {
-            public InteractionChannel Channel { get; }
-            public InteractionSample Sample { get; }
-
-            public PendingInteraction(InteractionChannel channel, InteractionSample sample)
-            {
-                Channel = channel;
-                Sample = sample;
             }
         }
     }

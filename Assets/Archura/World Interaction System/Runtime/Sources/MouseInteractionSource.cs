@@ -1,53 +1,58 @@
 using Archura.WIS.Core;
 using UnityEngine;
-#if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
-#endif
+using Archura.WIS.Surfaces;
 
 namespace Archura.WIS.Sources
 {
     public sealed class MouseInteractionSource : MonoBehaviour
     {
-        [SerializeField] private InteractionManager manager;
-        [SerializeField] private InteractionChannel channel;
+        [Header("Input")]
+        [SerializeField] private InputActionReference clickAction;
         [SerializeField] private Camera targetCamera;
+        
+        [Header("Interaction Settings")]
         [SerializeField] private LayerMask surfaceLayers = ~0;
+        [SerializeField, Min(0.01f)] private float maxDistance = 1000f;
         [SerializeField, Min(0.01f)] private float radius = 1f;
         [SerializeField, Range(0f, 1f)] private float strength = 1f;
 
-        private void Update()
+        private void OnEnable()
         {
-            if (!WasClicked() || manager == null || channel == null) return;
+            if (clickAction == null || clickAction.action == null) return;
+
+            clickAction.action.performed += OnClick;
+            clickAction.action.Enable();
+        }
+
+        private void OnDisable()
+        {
+            if (clickAction == null || clickAction.action == null) return;
+
+            clickAction.action.performed -= OnClick;
+            clickAction.action.Disable();
+        }
+
+        private void OnClick(InputAction.CallbackContext context)
+        {
+            if (Mouse.current == null || InteractionManager.Instance == null) return;
+
             Camera camera = targetCamera != null ? targetCamera : Camera.main;
             if (camera == null) return;
 
-            Ray ray = camera.ScreenPointToRay(GetMousePosition());
-            if (!Physics.Raycast(ray, out RaycastHit hit, 1000f, surfaceLayers, QueryTriggerInteraction.Ignore)) return;
+            Vector2 mousePosition = Mouse.current.position.ReadValue();
+            Ray ray = camera.ScreenPointToRay(mousePosition);
+
+            if (!Physics.Raycast(ray, out RaycastHit hit, maxDistance, surfaceLayers, QueryTriggerInteraction.Ignore))
+                return;
+
+            if (!hit.collider.TryGetComponent(out InteractionSurface surface))
+                surface = hit.collider.GetComponentInParent<InteractionSurface>();
+
+            if (surface == null) return;
 
             var sample = new InteractionSample(hit.point, Vector3.zero, radius, strength);
-            manager.Publish(channel, in sample);
-        }
-
-        private static bool WasClicked()
-        {
-#if ENABLE_INPUT_SYSTEM
-            return Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
-#elif ENABLE_LEGACY_INPUT_MANAGER
-            return Input.GetMouseButtonDown(0);
-#else
-            return false;
-#endif
-        }
-
-        private static Vector2 GetMousePosition()
-        {
-#if ENABLE_INPUT_SYSTEM
-            return Mouse.current.position.ReadValue();
-#elif ENABLE_LEGACY_INPUT_MANAGER
-            return Input.mousePosition;
-#else
-            return Vector2.zero;
-#endif
+            InteractionManager.Instance.Publish(surface.Channel, in sample);
         }
     }
 }
