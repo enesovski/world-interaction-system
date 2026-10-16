@@ -1,7 +1,6 @@
 using Archura.WIS.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using Archura.WIS.Surfaces;
 
 namespace Archura.WIS.Sources
 {
@@ -10,32 +9,37 @@ namespace Archura.WIS.Sources
         [Header("Input")]
         [SerializeField] private InputActionReference clickAction;
         [SerializeField] private Camera targetCamera;
-        
-        [Header("Interaction Settings")]
+
+        [Header("Interaction")]
+        [SerializeField] private InteractionChannel channel;
         [SerializeField] private LayerMask surfaceLayers = ~0;
         [SerializeField, Min(0.01f)] private float maxDistance = 1000f;
         [SerializeField, Min(0.01f)] private float radius = 1f;
         [SerializeField, Range(0f, 1f)] private float strength = 1f;
 
+        private InputAction action;
+
         private void OnEnable()
         {
-            if (clickAction == null || clickAction.action == null) return;
+            action = clickAction != null ? clickAction.action : null;
+            if (action == null) return;
 
-            clickAction.action.performed += OnClick;
-            clickAction.action.Enable();
+            action.performed += OnClick;
+            action.Enable();
         }
 
         private void OnDisable()
         {
-            if (clickAction == null || clickAction.action == null) return;
+            if (action == null) return;
 
-            clickAction.action.performed -= OnClick;
-            clickAction.action.Disable();
+            action.performed -= OnClick;
+            action.Disable();
+            action = null;
         }
 
         private void OnClick(InputAction.CallbackContext context)
         {
-            if (Mouse.current == null || InteractionManager.Instance == null) return;
+            if (Mouse.current == null || channel == null) return;
 
             Camera camera = targetCamera != null ? targetCamera : Camera.main;
             if (camera == null) return;
@@ -46,13 +50,7 @@ namespace Archura.WIS.Sources
             if (!Physics.Raycast(ray, out RaycastHit hit, maxDistance, surfaceLayers, QueryTriggerInteraction.Ignore))
                 return;
 
-            if (!hit.collider.TryGetComponent(out InteractionSurface surface))
-                surface = hit.collider.GetComponentInParent<InteractionSurface>();
-
-            if (surface == null) return;
-
-            var sample = new InteractionSample(hit.point, Vector3.zero, radius, strength);
-            InteractionManager.Instance.Publish(surface.Channel, in sample);
+            InteractionEmitter.TryEmit(hit, channel, radius, strength);
         }
     }
 }

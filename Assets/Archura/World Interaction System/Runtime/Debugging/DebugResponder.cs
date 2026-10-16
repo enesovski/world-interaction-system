@@ -1,36 +1,24 @@
 using Archura.WIS.Core;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Archura.WIS.Debugging
 {
-    public sealed class DebugResponder : MonoBehaviour, IInteractionResponder
+    public sealed class DebugResponder : InteractionResponder
     {
-        [SerializeField] private InteractionChannel channel;
-        [SerializeField] private bool logInteractions;
+        [SerializeField] private bool logInteractions = true;
 
-        
-        private void OnEnable()
+        protected override void OnInteraction(
+            InteractionSurface surface,
+            InteractionChannel channel,
+            in InteractionSample sample)
         {
-            if (channel != null) 
-                InteractionManager.Instance.Register(channel, this);
+            if (!logInteractions) return;
+
+            Debug.Log(
+                $"[{channel.name}] {surface.name} received an interaction at {sample.Position}. " +
+                $"Radius: {sample.Radius}, Strength: {sample.Strength}",
+                this
+            );
         }
-
-        private void OnDisable()
-        {
-            if (channel != null) 
-                InteractionManager.Instance.Unregister(channel, this);
-        }
-
-
-        public void Receive(in InteractionSample sample)
-        {
-            if (!isActiveAndEnabled) 
-                return;
-
-            if (logInteractions)
-                Debug.Log($"{name} received an interaction.", this);
-        }
-        
     }
 }
