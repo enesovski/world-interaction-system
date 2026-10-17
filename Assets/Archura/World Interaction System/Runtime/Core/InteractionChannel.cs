@@ -1,7 +1,10 @@
-﻿namespace Archura.WIS.Core
+﻿using UnityEngine;
+
+namespace Archura.WIS.Core
 {
-    public class InteractionChannel
+    [CreateAssetMenu(fileName = "New Interaction Channel", menuName = "World Interaction System/Interaction Channel")]
+    public class InteractionChannel : ScriptableObject
     {
-        public new string name;
+        
     }
 }

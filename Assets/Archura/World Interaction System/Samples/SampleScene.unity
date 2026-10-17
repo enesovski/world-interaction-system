@@ -163,14 +163,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eae30560bae7c9a4bb4dd9099d58b735, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Archura.WIS::Archura.WIS.Debugging.DebugResponder
-  manager: {fileID: 1234695357}
-  channel: {fileID: 11400000, guid: ce472948b1814674eb7f6b16637f4689, type: 2}
-  markerMaterial: {fileID: 2100000, guid: a4965aba163ba7d41a73a636ace2b455, type: 2}
-  markerColor: {r: 0.15, g: 0.9, b: 1, a: 1}
-  markerLifetime: 2
-  markerCapacity: 16
-  radiusScale: 1
-  logInteractions: 0
+  acceptedChannels: []
+  logInteractions: 1
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -638,7 +632,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1414952347}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1414952346
 GameObject:
@@ -669,7 +663,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1234695358}
   - {fileID: 1173677510}
   - {fileID: 1616695488}
   - {fileID: 121741161}
@@ -720,12 +713,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e7b941168b243d4493860d409764045, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Archura.WIS::Archura.WIS.Sources.MouseInteractionSource
-  manager: {fileID: 1234695357}
-  channel: {fileID: 11400000, guid: ce472948b1814674eb7f6b16637f4689, type: 2}
+  clickAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   targetCamera: {fileID: 330585545}
+  channel: {fileID: 0}
   surfaceLayers:
     serializedVersion: 2
     m_Bits: 1
+  maxDistance: 1000
   radius: 1
   strength: 1
 --- !u!1 &2037095621
@@ -772,14 +766,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eae30560bae7c9a4bb4dd9099d58b735, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Archura.WIS::Archura.WIS.Debugging.DebugResponder
-  manager: {fileID: 1234695357}
-  channel: {fileID: 11400000, guid: ce472948b1814674eb7f6b16637f4689, type: 2}
-  markerMaterial: {fileID: 2100000, guid: a4965aba163ba7d41a73a636ace2b455, type: 2}
-  markerColor: {r: 1, g: 0.65, b: 0.12, a: 1}
-  markerLifetime: 2
-  markerCapacity: 16
-  radiusScale: 1.15
-  logInteractions: 0
+  acceptedChannels: []
+  logInteractions: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -787,4 +775,5 @@ SceneRoots:
   - {fileID: 330585546}
   - {fileID: 410087041}
   - {fileID: 832575519}
+  - {fileID: 1234695358}
   - {fileID: 1414952347}

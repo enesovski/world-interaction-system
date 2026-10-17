@@ -5,7 +5,12 @@ namespace Archura.WIS.Core
 {
     public sealed class InteractionSurface : MonoBehaviour
     {
-        [SerializeField] private InteractionResponder[] responders;
+        private InteractionResponder[] responders;
+
+        private void Awake()
+        {
+            responders = GetComponentsInChildren<InteractionResponder>();
+        }
 
         public void Interact(InteractionChannel channel, in InteractionSample sample)
         {
