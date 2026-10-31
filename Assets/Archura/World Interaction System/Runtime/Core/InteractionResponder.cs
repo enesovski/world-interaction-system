@@ -8,18 +8,22 @@ namespace Archura.WIS.Core
 
         internal void Receive(InteractionSurface surface, InteractionChannel channel, in InteractionSample sample)
         {
-            if (!isActiveAndEnabled || !Accepts(channel)) return;
+            if (!isActiveAndEnabled || !Accepts(channel))
+                return;
 
             OnInteraction(surface, channel, in sample);
         }
 
         private bool Accepts(InteractionChannel channel)
         {
-            if (channel == null || acceptedChannels == null) return false;
+            if (channel == null || acceptedChannels == null)
+                return false;
 
-            foreach (var accepted in acceptedChannels)
+            foreach (InteractionChannel accepted in acceptedChannels)
+            {
                 if (accepted == channel)
                     return true;
+            }
 
             return false;
         }

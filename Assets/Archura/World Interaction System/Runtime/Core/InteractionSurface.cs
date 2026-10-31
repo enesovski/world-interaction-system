@@ -9,16 +9,18 @@ namespace Archura.WIS.Core
 
         private void Awake()
         {
-            responders = GetComponentsInChildren<InteractionResponder>();
+            responders = GetComponentsInChildren<InteractionResponder>(true);
         }
 
         public void Interact(InteractionChannel channel, in InteractionSample sample)
         {
-            if (!isActiveAndEnabled || channel == null || responders == null) return;
+            if (!isActiveAndEnabled || channel == null || responders == null)
+                return;
 
-            foreach (var responder in responders)
+            foreach (InteractionResponder responder in responders)
             {
-                if (responder == null) continue;
+                if (responder == null)
+                    continue;
 
                 try
                 {

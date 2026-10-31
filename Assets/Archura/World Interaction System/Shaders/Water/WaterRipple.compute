@@ -1,0 +1,80 @@
+
+#pragma kernel CSMain
+
+#define MAX_RIPPLES 96
+
+RWTexture2D<float> _RippleTex;
+
+int _Resolution;
+int _RippleCount;
+
+float3 _WorldUAxis;
+float3 _WorldVAxis;
+
+float _WaveSpeed;
+float _Damping;
+float _WakeWaveSpeed;
+float _WakeDamping;
+float _BlendStrength;
+
+float4 _Ripples[MAX_RIPPLES];
+float4 _Strengths[MAX_RIPPLES];
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _Resolution || id.y >= _Resolution)
+        return;
+
+    float2 uv = (float2(id.xy) + 0.5) / _Resolution;
+    float height = 0.0;
+
+    for (int i = 0; i < _RippleCount; i++)
+    {
+        float4 ripple = _Ripples[i];
+
+        float2 deltaUV = uv - ripple.xy;
+        float3 worldOffset = deltaUV.x * _WorldUAxis + deltaUV.y * _WorldVAxis;
+        float distance = length(worldOffset);
+
+        float3 direction = _Strengths[i].yzw;
+        bool isWake = dot(direction, direction) > 0.5;
+
+        float speed = isWake ? _WakeWaveSpeed : _WaveSpeed;
+        float damping = isWake ? _WakeDamping : _Damping;
+
+        float age = ripple.z;
+        float width = max(0.08, ripple.w * 0.45);
+        float delta = (distance - age * speed) / width;
+
+        if (abs(delta) > 3.5)
+            continue;
+
+        float wave = cos(delta * 2.5) * exp(-delta * delta * 0.65);
+        float attenuation = exp(-age * damping) * rsqrt(1.0 + distance);
+
+        if (isWake)
+        {
+            float behind = -dot(worldOffset, direction);
+            float sideways = length(worldOffset + direction * behind);
+
+            float wakeEdge = abs(sideways - max(behind, 0.0) * 0.6);
+            float wakeWidth = max(0.15, ripple.w * 0.3);
+            float wakeBand = exp(-wakeEdge * wakeEdge / (wakeWidth * wakeWidth));
+            float rearFade = saturate(behind / max(ripple.w, 0.1));
+
+            wave *= 0.25 + 1.35 * wakeBand * rearFade;
+        }
+
+        height += wave * attenuation * _Strengths[i].x;
+    }
+
+    // Compress strong overlaps without changing a single ripple.
+    if (_RippleCount > 1)
+    {
+        float excess = max(0.0, abs(height) - 0.7);
+        height /= 1.0 + excess * _BlendStrength;
+    }
+
+    _RippleTex[id.xy] = height;
+}
